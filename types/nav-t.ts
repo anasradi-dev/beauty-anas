@@ -1,4 +1,5 @@
 export interface INav {
   title: string;
-  slug: string;
+  slug?: string;
+  children?: INav[];
 }

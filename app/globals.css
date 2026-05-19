@@ -1,23 +1,21 @@
 @import "tailwindcss";
 
 a {
-  color: #2563eb;
+  @apply text-blue-600;
 }
 
 a:hover {
-  color: #1e40af;
-  text-decoration: underline;
+  @apply text-blue-800 underline;
 }
 
 a:visited {
-  color: #9333ea;
+  @apply text-purple-600;
 }
 
 .article h2 {
-  font-size: 1.5rem;
-  font-weight: bold;
+  @apply text-2xl font-bold;
 }
 
 button {
-  cursor: pointer;
+  @apply cursor-pointer;
 }
