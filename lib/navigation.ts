@@ -1,45 +1,45 @@
 import { INav } from "@/types/nav-t";
 
 export const beautyNavigation: INav[] = [
-  { title: "Home", slug: "#top" },
+  { title: "Home", slug: "/" },
   {
     title: "Sales Representatives",
     children: [
-      { title: "Representative List", slug: "#representative-list" },
-      { title: "Representative Details", slug: "#representative-details" },
-      { title: "Representative Products", slug: "#representative-products" },
+      { title: "Representative List", slug: "/sales-representatives/list" },
+      { title: "Representative Details", slug: "/sales-representatives/details" },
+      { title: "Representative Products", slug: "/sales-representatives/products" },
     ],
   },
   {
     title: "Products",
     children: [
-      { title: "Product List", slug: "#product-list" },
-      { title: "Product Holders", slug: "#product-holders" },
-      { title: "Product Collections", slug: "#product-collections" },
+      { title: "Product List", slug: "/products/list" },
+      { title: "Product Holders", slug: "/products/holders" },
+      { title: "Product Collections", slug: "/products/collections" },
     ],
   },
   {
     title: "Settlements",
     children: [
-      { title: "Money Deposits", slug: "#money-deposits" },
-      { title: "Settlement Dates", slug: "#settlement-dates" },
-      { title: "Total Deposited Amount", slug: "#total-deposited-amount" },
+      { title: "Money Deposits", slug: "/settlements/money-deposits" },
+      { title: "Settlement Dates", slug: "/settlements/dates" },
+      { title: "Total Deposited Amount", slug: "/settlements/total-deposited" },
     ],
   },
   {
     title: "Sales",
     children: [
-      { title: "Sales Volume", slug: "#sales-volume" },
-      { title: "Commission Salary", slug: "#commission-salary" },
-      { title: "Product Batches", slug: "#product-batches" },
+      { title: "Sales Volume", slug: "/sales/volume" },
+      { title: "Commission Salary", slug: "/sales/commission-salary" },
+      { title: "Product Batches", slug: "/sales/product-batches" },
     ],
   },
   {
     title: "Reports",
     children: [
-      { title: "Representative Report", slug: "#representative-report" },
-      { title: "Product Report", slug: "#product-report" },
-      { title: "Deposit Summary", slug: "#deposit-summary" },
+      { title: "Representative Report", slug: "/reports/representatives" },
+      { title: "Product Report", slug: "/reports/products" },
+      { title: "Deposit Summary", slug: "/reports/deposits" },
     ],
   },
 ];
