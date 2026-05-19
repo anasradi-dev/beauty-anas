@@ -3,8 +3,8 @@ import { Header } from "@/components/header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Beauty Clinic",
-  description: "Personalized beauty care for you",
+  title: "BEAUTY Commission Sales",
+  description: "Cosmetic product commission sales management",
 };
 
 export default function RootLayout({

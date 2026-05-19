@@ -43,7 +43,7 @@ export function Nav(props: IProps) {
                         <ChevronDownIcon className="h-4 w-4 text-slate-500" />
                       </button>
                       <div
-                        className={`mt-2 w-full rounded-3xl border border-slate-200 bg-white shadow-lg md:absolute md:left-0 md:top-full md:w-64 md:mt-0 md:opacity-0 md:pointer-events-none md:transition md:duration-200 md:group-hover:opacity-100 md:group-hover:pointer-events-auto ${
+                        className={`mt-2 w-full rounded-b-2xl border border-slate-200 bg-white shadow-lg md:absolute md:left-0 md:top-full md:w-64 md:mt-0 md:opacity-0 md:pointer-events-none md:transition md:duration-200 md:group-hover:opacity-100 md:group-hover:pointer-events-auto ${
                           isGroupOpen
                             ? "block md:block md:opacity-100 md:pointer-events-auto"
                             : "hidden"
@@ -54,7 +54,7 @@ export function Nav(props: IProps) {
                             <Link
                               key={child.title}
                               href={child.slug || "#"}
-                              className="rounded-2xl px-3 py-2 text-slate-700 transition hover:bg-slate-50"
+                              className="rounded-lg px-3 py-2 text-slate-700 transition hover:bg-slate-50 hover:text-pink-700"
                               onClick={() => setIsOpen(false)}
                             >
                               {child.title}
