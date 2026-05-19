@@ -26,6 +26,14 @@ type RepForm = {
   depositedAmount: string;
 };
 
+type DataSource = "loading" | "mongodb" | "local";
+
+type RepresentativesResponse = {
+  representatives?: SalesRep[];
+  representative?: SalesRep;
+  error?: string;
+};
+
 const emptyForm: RepForm = {
   name: "",
   address: "",
@@ -73,6 +81,7 @@ export function RepresentativeManager({
   const [isAdding, setIsAdding] = useState(false);
   const [editingRepId, setEditingRepId] = useState<string | null>(null);
   const [form, setForm] = useState<RepForm>(emptyForm);
+  const [dataSource, setDataSource] = useState<DataSource>("loading");
   const [hasLoadedSavedReps, setHasLoadedSavedReps] = useState(false);
   const totalDeposited = representatives.reduce(
     (sum, rep) => sum + rep.depositedAmount,
@@ -106,24 +115,52 @@ export function RepresentativeManager({
   );
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const savedReps = window.localStorage.getItem(storageKey);
+    let isMounted = true;
 
-      if (savedReps) {
-        setRepresentatives(JSON.parse(savedReps) as SalesRep[]);
+    async function loadRepresentatives() {
+      try {
+        const response = await fetch("/api/representatives", {
+          cache: "no-store",
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as RepresentativesResponse;
+
+          if (isMounted && data.representatives) {
+            setRepresentatives(data.representatives);
+            setDataSource("mongodb");
+            setHasLoadedSavedReps(true);
+            return;
+          }
+        }
+      } catch {
+        // The local fallback keeps the app useful before MongoDB is configured.
       }
 
-      setHasLoadedSavedReps(true);
-    }, 0);
+      const savedReps = window.localStorage.getItem(storageKey);
 
-    return () => window.clearTimeout(timer);
+      if (isMounted) {
+        if (savedReps) {
+          setRepresentatives(JSON.parse(savedReps) as SalesRep[]);
+        }
+
+        setDataSource("local");
+        setHasLoadedSavedReps(true);
+      }
+    }
+
+    loadRepresentatives();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (hasLoadedSavedReps) {
+    if (hasLoadedSavedReps && dataSource === "local") {
       window.localStorage.setItem(storageKey, JSON.stringify(representatives));
     }
-  }, [hasLoadedSavedReps, representatives]);
+  }, [dataSource, hasLoadedSavedReps, representatives]);
 
   function updateForm(field: keyof RepForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -135,20 +172,49 @@ export function RepresentativeManager({
     setForm(emptyForm);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function formPayload() {
+    return {
+      name: form.name.trim(),
+      address: form.address.trim(),
+      phone: form.phone.trim(),
+      settlementDate: form.settlementDate,
+      depositedAmount: Number(form.depositedAmount),
+    };
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const payload = formPayload();
 
     if (editingRepId) {
+      if (dataSource === "mongodb") {
+        const response = await fetch(`/api/representatives/${editingRepId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = (await response.json()) as RepresentativesResponse;
+
+        if (!response.ok || !data.representative) {
+          window.alert(data.error || "Could not update representative.");
+          return;
+        }
+
+        setRepresentatives((current) =>
+          current.map((rep) =>
+            rep.id === editingRepId ? data.representative! : rep,
+          ),
+        );
+        closeForm();
+        return;
+      }
+
       setRepresentatives((current) =>
         current.map((rep) =>
           rep.id === editingRepId
             ? {
                 ...rep,
-                name: form.name.trim(),
-                address: form.address.trim(),
-                phone: form.phone.trim(),
-                settlementDate: form.settlementDate,
-                depositedAmount: Number(form.depositedAmount),
+                ...payload,
               }
             : rep,
         ),
@@ -157,13 +223,27 @@ export function RepresentativeManager({
       return;
     }
 
+    if (dataSource === "mongodb") {
+      const response = await fetch("/api/representatives", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await response.json()) as RepresentativesResponse;
+
+      if (!response.ok || !data.representative) {
+        window.alert(data.error || "Could not create representative.");
+        return;
+      }
+
+      setRepresentatives((current) => [...current, data.representative!]);
+      closeForm();
+      return;
+    }
+
     const newRepresentative: SalesRep = {
       id: `rep-${Date.now()}`,
-      name: form.name.trim(),
-      address: form.address.trim(),
-      phone: form.phone.trim(),
-      settlementDate: form.settlementDate,
-      depositedAmount: Number(form.depositedAmount),
+      ...payload,
     };
 
     setRepresentatives((current) => [...current, newRepresentative]);
@@ -182,7 +262,7 @@ export function RepresentativeManager({
     setIsAdding(true);
   }
 
-  function removeRepresentative(repId: string) {
+  async function removeRepresentative(repId: string) {
     const rep = representatives.find((item) => item.id === repId);
 
     if (!rep) {
@@ -192,16 +272,43 @@ export function RepresentativeManager({
     const shouldRemove = window.confirm(`Remove ${rep.name}?`);
 
     if (shouldRemove) {
+      if (dataSource === "mongodb") {
+        const response = await fetch(`/api/representatives/${repId}`, {
+          method: "DELETE",
+        });
+        const data = (await response.json()) as RepresentativesResponse;
+
+        if (!response.ok) {
+          window.alert(data.error || "Could not remove representative.");
+          return;
+        }
+      }
+
       setRepresentatives((current) =>
         current.filter((representative) => representative.id !== repId),
       );
     }
   }
 
-  function resetRepresentatives() {
+  async function resetRepresentatives() {
     const shouldReset = window.confirm("Reset the representative list?");
 
     if (shouldReset) {
+      if (dataSource === "mongodb") {
+        const response = await fetch("/api/beauty/seed", {
+          method: "POST",
+        });
+        const data = (await response.json()) as RepresentativesResponse;
+
+        if (!response.ok || !data.representatives) {
+          window.alert(data.error || "Could not seed MongoDB data.");
+          return;
+        }
+
+        setRepresentatives(data.representatives);
+        return;
+      }
+
       setRepresentatives(initialReps);
     }
   }
@@ -214,6 +321,13 @@ export function RepresentativeManager({
             Representative List
           </h2>
           <div className="flex flex-wrap gap-2">
+            <span className="inline-flex h-10 items-center rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-500">
+              {dataSource === "mongodb"
+                ? "MongoDB"
+                : dataSource === "local"
+                  ? "Local"
+                  : "Loading"}
+            </span>
             <button
               type="button"
               onClick={resetRepresentatives}
