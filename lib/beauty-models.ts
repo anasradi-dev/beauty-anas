@@ -17,6 +17,7 @@ export type ProductDocument = {
 };
 
 export type ProductCollectionDocument = {
+  id: string;
   repId: string;
   productId: string;
   quantity: number;
@@ -54,6 +55,7 @@ const productSchema = new Schema<ProductDocument>(
 
 const productCollectionSchema = new Schema<ProductCollectionDocument>(
   {
+    id: { type: String, required: true, unique: true, index: true },
     repId: { type: String, required: true, index: true },
     productId: { type: String, required: true, index: true },
     quantity: { type: Number, required: true, min: 0 },

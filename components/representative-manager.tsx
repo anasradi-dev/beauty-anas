@@ -22,7 +22,7 @@ type RepForm = {
   depositedAmount: string;
 };
 
-type DataSource = "loading" | "mongodb" | "local";
+type DataSource = "loading" | "server" | "local";
 
 type RepresentativesResponse = {
   representatives?: SalesRep[];
@@ -118,7 +118,7 @@ export function RepresentativeManager({
 
           if (isMounted && data.representatives) {
             setRepresentatives(data.representatives);
-            setDataSource("mongodb");
+            setDataSource("server");
             setHasLoadedSavedReps(true);
             return;
           }
@@ -177,7 +177,7 @@ export function RepresentativeManager({
     const payload = formPayload();
 
     if (editingRepId) {
-      if (dataSource === "mongodb") {
+      if (dataSource === "server") {
         const response = await fetch(`/api/representatives/${editingRepId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -213,7 +213,7 @@ export function RepresentativeManager({
       return;
     }
 
-    if (dataSource === "mongodb") {
+    if (dataSource === "server") {
       const response = await fetch("/api/representatives", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -262,7 +262,7 @@ export function RepresentativeManager({
     const shouldRemove = window.confirm(`Remove ${rep.name}?`);
 
     if (shouldRemove) {
-      if (dataSource === "mongodb") {
+      if (dataSource === "server") {
         const response = await fetch(`/api/representatives/${repId}`, {
           method: "DELETE",
         });
@@ -284,14 +284,14 @@ export function RepresentativeManager({
     const shouldReset = window.confirm("Reset the representative list?");
 
     if (shouldReset) {
-      if (dataSource === "mongodb") {
+      if (dataSource === "server") {
         const response = await fetch("/api/beauty/seed", {
           method: "POST",
         });
         const data = (await response.json()) as RepresentativesResponse;
 
         if (!response.ok || !data.representatives) {
-          window.alert(data.error || "Could not seed MongoDB data.");
+          window.alert(data.error || "Could not reset saved data.");
           return;
         }
 
@@ -319,8 +319,8 @@ export function RepresentativeManager({
             </h2>
             <div className="flex flex-wrap gap-2">
               <span className="inline-flex h-10 items-center rounded-lg border border-slate-200 px-3 text-xs font-semibold text-slate-500">
-                {dataSource === "mongodb"
-                  ? "MongoDB"
+                {dataSource === "server"
+                  ? "Saved"
                   : dataSource === "local"
                     ? "Local"
                     : "Loading"}

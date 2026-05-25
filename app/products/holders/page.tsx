@@ -1,3 +1,7 @@
-import { EmptyPage } from "@/components/empty-page";
+import { ProductHoldersPageContent } from "@/components/product-pages";
 
-export default EmptyPage;
+export const dynamic = "force-dynamic";
+
+export default async function ProductHoldersPage() {
+  return <ProductHoldersPageContent />;
+}

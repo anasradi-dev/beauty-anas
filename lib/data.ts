@@ -6,6 +6,7 @@ export interface ProductItem {
 }
 
 export interface ProductCollection {
+  id: string;
   repId: string;
   productId: string;
   quantity: number;
@@ -59,12 +60,12 @@ export const salesReps: SalesRep[] = [
 ];
 
 export const collections: ProductCollection[] = [
-  { repId: "r1", productId: "p1", quantity: 6, saleDate: "2026-05-28" },
-  { repId: "r1", productId: "p4", quantity: 8, saleDate: "2026-05-28" },
-  { repId: "r2", productId: "p2", quantity: 5, saleDate: "2026-05-27" },
-  { repId: "r2", productId: "p5", quantity: 9, saleDate: "2026-05-25" },
-  { repId: "r3", productId: "p3", quantity: 7, saleDate: "2026-05-26" },
-  { repId: "r3", productId: "p1", quantity: 4, saleDate: "2026-05-26" },
+  { id: "c1", repId: "r1", productId: "p1", quantity: 6, saleDate: "2026-05-28" },
+  { id: "c2", repId: "r1", productId: "p4", quantity: 8, saleDate: "2026-05-28" },
+  { id: "c3", repId: "r2", productId: "p2", quantity: 5, saleDate: "2026-05-27" },
+  { id: "c4", repId: "r2", productId: "p5", quantity: 9, saleDate: "2026-05-25" },
+  { id: "c5", repId: "r3", productId: "p3", quantity: 7, saleDate: "2026-05-26" },
+  { id: "c6", repId: "r3", productId: "p1", quantity: 4, saleDate: "2026-05-26" },
 ];
 
 export const productBatches = [

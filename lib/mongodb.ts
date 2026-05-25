@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import dns from "node:dns";
 
 type MongooseCache = {
   connection: typeof mongoose | null;
@@ -16,6 +17,16 @@ const cache = global.mongooseCache ?? {
 
 global.mongooseCache = cache;
 
+function configureMongoDns() {
+  const servers = process.env.MONGODB_DNS_SERVERS?.split(",")
+    .map((server) => server.trim())
+    .filter(Boolean);
+
+  if (servers?.length) {
+    dns.setServers(servers);
+  }
+}
+
 export async function connectMongo() {
   if (cache.connection) {
     return cache.connection;
@@ -26,6 +37,8 @@ export async function connectMongo() {
   if (!uri) {
     throw new Error("Missing MONGODB_URI environment variable.");
   }
+
+  configureMongoDns();
 
   cache.promise ??= mongoose.connect(uri, {
     dbName: process.env.MONGODB_DB || "beauty_anas",
