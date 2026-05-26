@@ -32,18 +32,33 @@ export async function connectMongo() {
     return cache.connection;
   }
 
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI?.trim();
 
   if (!uri) {
-    throw new Error("Missing MONGODB_URI environment variable.");
+    throw new Error(
+      "MongoDB is not configured. Add MONGODB_URI to .env and restart the dev server.",
+    );
+  }
+
+  if (!uri.startsWith("mongodb://") && !uri.startsWith("mongodb+srv://")) {
+    throw new Error(
+      "Invalid MONGODB_URI. It must start with mongodb:// or mongodb+srv://.",
+    );
   }
 
   configureMongoDns();
 
   cache.promise ??= mongoose.connect(uri, {
     dbName: process.env.MONGODB_DB || "beauty_anas",
+    serverSelectionTimeoutMS: 8000,
   });
 
-  cache.connection = await cache.promise;
+  try {
+    cache.connection = await cache.promise;
+  } catch (error) {
+    cache.promise = null;
+    throw error;
+  }
+
   return cache.connection;
 }

@@ -8,6 +8,15 @@ import {
 } from "@heroicons/react/24/outline";
 import { FormEvent, useMemo, useState } from "react";
 import { ProductCollection, ProductItem, SalesRep } from "@/lib/data";
+import { useAuth } from "@/components/auth";
+import {
+  createProduct,
+  createProductCollection,
+  deleteProduct,
+  deleteProductCollection,
+  updateProduct,
+  updateProductCollection,
+} from "@/src/api/beauty-api";
 
 type ProductManagerProps = {
   initialProducts: ProductItem[];
@@ -23,22 +32,10 @@ type ProductForm = {
 };
 
 type CollectionForm = {
-  repId: string;
+  representativeId: string;
   productId: string;
   quantity: string;
   saleDate: string;
-};
-
-type ProductResponse = {
-  products?: ProductItem[];
-  product?: ProductItem;
-  error?: string;
-};
-
-type CollectionResponse = {
-  collections?: ProductCollection[];
-  collection?: ProductCollection;
-  error?: string;
 };
 
 const emptyProductForm: ProductForm = {
@@ -48,7 +45,7 @@ const emptyProductForm: ProductForm = {
 };
 
 const emptyCollectionForm: CollectionForm = {
-  repId: "",
+  representativeId: "",
   productId: "",
   quantity: "",
   saleDate: "",
@@ -104,10 +101,10 @@ export function ProductManager({
   representatives,
   view,
 }: ProductManagerProps) {
+  const { isAdmin } = useAuth();
   const [products, setProducts] = useState(initialProducts);
   const [collections, setCollections] = useState(initialCollections);
-  const [productForm, setProductForm] =
-    useState<ProductForm>(emptyProductForm);
+  const [productForm, setProductForm] = useState<ProductForm>(emptyProductForm);
   const [collectionForm, setCollectionForm] =
     useState<CollectionForm>(emptyCollectionForm);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -120,9 +117,11 @@ export function ProductManager({
   const collectionRows = useMemo(
     () =>
       collections.map((collection) => {
-        const product = products.find((item) => item.id === collection.productId);
+        const product = products.find(
+          (item) => item.id === collection.productId,
+        );
         const representative = representatives.find(
-          (item) => item.id === collection.repId,
+          (item) => item.id === collection.representativeId,
         );
         const unitPrice = product?.unitPrice || 0;
 
@@ -138,6 +137,8 @@ export function ProductManager({
   );
 
   function openProductForm(product?: ProductItem) {
+    if (!isAdmin) return;
+
     if (product) {
       setEditingProductId(product.id);
       setProductForm({
@@ -154,10 +155,12 @@ export function ProductManager({
   }
 
   function openCollectionForm(collection?: ProductCollection) {
+    if (!isAdmin) return;
+
     if (collection) {
       setEditingCollectionId(collection.id);
       setCollectionForm({
-        repId: collection.repId,
+        representativeId: collection.representativeId,
         productId: collection.productId,
         quantity: String(collection.quantity),
         saleDate: collection.saleDate,
@@ -165,7 +168,7 @@ export function ProductManager({
     } else {
       setEditingCollectionId(null);
       setCollectionForm({
-        repId: representatives[0]?.id || "",
+        representativeId: representatives[0]?.id || "",
         productId: products[0]?.id || "",
         quantity: "",
         saleDate: new Date().toISOString().slice(0, 10),
@@ -177,23 +180,25 @@ export function ProductManager({
 
   async function submitProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isAdmin) return;
+
     const payload = {
       name: productForm.name.trim(),
       unitPrice: Number(productForm.unitPrice),
       batchCode: productForm.batchCode.trim(),
     };
-    const url = editingProductId
-      ? `/api/products/${editingProductId}`
-      : "/api/products";
-    const response = await fetch(url, {
-      method: editingProductId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = (await response.json()) as ProductResponse;
+    const data = editingProductId
+      ? await updateProduct(editingProductId, payload).catch((error) => ({
+          error,
+        }))
+      : await createProduct(payload).catch((error) => ({ error }));
 
-    if (!response.ok || !data.product) {
-      window.alert(data.error || "Could not save product.");
+    if ("error" in data || !data.product) {
+      window.alert(
+        data.error instanceof Error
+          ? data.error.message
+          : "Could not save product.",
+      );
       return;
     }
 
@@ -208,17 +213,20 @@ export function ProductManager({
   }
 
   async function removeProduct(product: ProductItem) {
+    if (!isAdmin) return;
+
     if (!window.confirm(`Remove ${product.name}?`)) {
       return;
     }
 
-    const response = await fetch(`/api/products/${product.id}`, {
-      method: "DELETE",
-    });
-    const data = (await response.json()) as ProductResponse;
+    const data = await deleteProduct(product.id).catch((error) => ({ error }));
 
-    if (!response.ok) {
-      window.alert(data.error || "Could not remove product.");
+    if ("error" in data) {
+      window.alert(
+        data.error instanceof Error
+          ? data.error.message
+          : "Could not remove product.",
+      );
       return;
     }
 
@@ -230,24 +238,26 @@ export function ProductManager({
 
   async function submitCollection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!isAdmin) return;
+
     const payload = {
-      repId: collectionForm.repId,
+      representativeId: collectionForm.representativeId,
       productId: collectionForm.productId,
       quantity: Number(collectionForm.quantity),
       saleDate: collectionForm.saleDate,
     };
-    const url = editingCollectionId
-      ? `/api/product-collections/${editingCollectionId}`
-      : "/api/product-collections";
-    const response = await fetch(url, {
-      method: editingCollectionId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = (await response.json()) as CollectionResponse;
+    const data = editingCollectionId
+      ? await updateProductCollection(editingCollectionId, payload).catch(
+          (error) => ({ error }),
+        )
+      : await createProductCollection(payload).catch((error) => ({ error }));
 
-    if (!response.ok || !data.collection) {
-      window.alert(data.error || "Could not save product collection.");
+    if ("error" in data || !data.collection) {
+      window.alert(
+        data.error instanceof Error
+          ? data.error.message
+          : "Could not save product collection.",
+      );
       return;
     }
 
@@ -262,17 +272,22 @@ export function ProductManager({
   }
 
   async function removeCollection(collection: ProductCollection) {
+    if (!isAdmin) return;
+
     if (!window.confirm("Remove this product collection?")) {
       return;
     }
 
-    const response = await fetch(`/api/product-collections/${collection.id}`, {
-      method: "DELETE",
-    });
-    const data = (await response.json()) as CollectionResponse;
+    const data = await deleteProductCollection(collection.id).catch((error) => ({
+      error,
+    }));
 
-    if (!response.ok) {
-      window.alert(data.error || "Could not remove product collection.");
+    if ("error" in data) {
+      window.alert(
+        data.error instanceof Error
+          ? data.error.message
+          : "Could not remove product collection.",
+      );
       return;
     }
 
@@ -285,34 +300,50 @@ export function ProductManager({
     <PageShell>
       {view === "list" ? (
         <>
-          <Toolbar
-            title="Product List"
-            actionLabel="Add Product"
-            onAdd={() => openProductForm()}
-          />
+          {isAdmin ? (
+            <Toolbar
+              title="Product List"
+              actionLabel="Add Product"
+              onAdd={() => openProductForm()}
+            />
+          ) : (
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+              Product List
+            </h1>
+          )}
           <ProductTable
             products={products}
+            isAdmin={isAdmin}
             onEdit={openProductForm}
             onRemove={removeProduct}
           />
         </>
       ) : (
         <>
-          <Toolbar
-            title={view === "holders" ? "Product Holders" : "Product Collections"}
-            actionLabel={view === "holders" ? "Add Holder" : "Add Collection"}
-            onAdd={() => openCollectionForm()}
-          />
+          {isAdmin ? (
+            <Toolbar
+              title={
+                view === "holders" ? "Product Holders" : "Product Collections"
+              }
+              actionLabel={view === "holders" ? "Add Holder" : "Add Collection"}
+              onAdd={() => openCollectionForm()}
+            />
+          ) : (
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+              {view === "holders" ? "Product Holders" : "Product Collections"}
+            </h1>
+          )}
           <CollectionTable
             rows={collectionRows}
             showValue={view === "collections"}
+            isAdmin={isAdmin}
             onEdit={openCollectionForm}
             onRemove={removeCollection}
           />
         </>
       )}
 
-      {isProductFormOpen ? (
+      {isAdmin && isProductFormOpen ? (
         <ProductFormModal
           form={productForm}
           title={editingProductId ? "Edit Product" : "Add Product"}
@@ -322,13 +353,15 @@ export function ProductManager({
         />
       ) : null}
 
-      {isCollectionFormOpen ? (
+      {isAdmin && isCollectionFormOpen ? (
         <CollectionFormModal
           form={collectionForm}
           products={products}
           representatives={representatives}
           title={
-            editingCollectionId ? "Edit Product Collection" : "Add Product Collection"
+            editingCollectionId
+              ? "Edit Product Collection"
+              : "Add Product Collection"
           }
           onChange={setCollectionForm}
           onClose={() => setIsCollectionFormOpen(false)}
@@ -341,10 +374,12 @@ export function ProductManager({
 
 function ProductTable({
   products,
+  isAdmin,
   onEdit,
   onRemove,
 }: {
   products: ProductItem[];
+  isAdmin: boolean;
   onEdit: (product: ProductItem) => void;
   onRemove: (product: ProductItem) => void;
 }) {
@@ -356,8 +391,12 @@ function ProductTable({
             <tr>
               <th className="px-4 py-3 font-semibold">Product Name</th>
               <th className="px-4 py-3 font-semibold">Unit Price</th>
-              <th className="px-4 py-3 font-semibold">Batch Code</th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
+              {isAdmin ? (
+                <th className="px-4 py-3 font-semibold">Batch Code</th>
+              ) : null}
+              {isAdmin ? (
+                <th className="px-4 py-3 font-semibold">Actions</th>
+              ) : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
@@ -367,13 +406,17 @@ function ProductTable({
                 <td className="px-4 py-3 align-top">
                   {currency.format(product.unitPrice)}
                 </td>
-                <td className="px-4 py-3 align-top">{product.batchCode}</td>
-                <td className="px-4 py-3 align-top">
-                  <ActionButtons
-                    onEdit={() => onEdit(product)}
-                    onRemove={() => onRemove(product)}
-                  />
-                </td>
+                {isAdmin ? (
+                  <td className="px-4 py-3 align-top">{product.batchCode}</td>
+                ) : null}
+                {isAdmin ? (
+                  <td className="px-4 py-3 align-top">
+                    <ActionButtons
+                      onEdit={() => onEdit(product)}
+                      onRemove={() => onRemove(product)}
+                    />
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -386,6 +429,7 @@ function ProductTable({
 function CollectionTable({
   rows,
   showValue,
+  isAdmin,
   onEdit,
   onRemove,
 }: {
@@ -398,6 +442,7 @@ function CollectionTable({
     }
   >;
   showValue: boolean;
+  isAdmin: boolean;
   onEdit: (collection: ProductCollection) => void;
   onRemove: (collection: ProductCollection) => void;
 }) {
@@ -414,13 +459,20 @@ function CollectionTable({
               {showValue ? (
                 <th className="px-4 py-3 font-semibold">Collection Value</th>
               ) : null}
-              <th className="px-4 py-3 font-semibold">Actions</th>
+              {isAdmin ? (
+                <th className="px-4 py-3 font-semibold">Actions</th>
+              ) : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
-            {rows.map((row) => (
-              <tr key={row.id} className="text-slate-700">
-                <td className="px-4 py-3 align-top">{row.representativeName}</td>
+            {rows.map((row, index) => (
+              <tr
+                key={`${row.id || "collection"}-${row.representativeId}-${row.productId}-${row.saleDate}-${index}`}
+                className="text-slate-700"
+              >
+                <td className="px-4 py-3 align-top">
+                  {row.representativeName}
+                </td>
                 <td className="px-4 py-3 align-top">{row.productName}</td>
                 <td className="px-4 py-3 align-top">
                   {currency.format(row.unitPrice)}
@@ -431,12 +483,14 @@ function CollectionTable({
                     {currency.format(row.value)}
                   </td>
                 ) : null}
-                <td className="px-4 py-3 align-top">
-                  <ActionButtons
-                    onEdit={() => onEdit(row)}
-                    onRemove={() => onRemove(row)}
-                  />
-                </td>
+                {isAdmin ? (
+                  <td className="px-4 py-3 align-top">
+                    <ActionButtons
+                      onEdit={() => onEdit(row)}
+                      onRemove={() => onRemove(row)}
+                    />
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
@@ -551,8 +605,10 @@ function CollectionFormModal({
         Sales representative
         <select
           required
-          value={form.repId}
-          onChange={(event) => onChange({ ...form, repId: event.target.value })}
+          value={form.representativeId}
+          onChange={(event) =>
+            onChange({ ...form, representativeId: event.target.value })
+          }
           className="mt-2 h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none transition focus:border-pink-600 focus:ring-2 focus:ring-pink-100"
         >
           {representatives.map((rep) => (

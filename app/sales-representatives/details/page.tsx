@@ -1,11 +1,15 @@
 import { RepresentativeManager } from "@/components/representative-manager";
-import { salesReps } from "@/lib/data";
+import { beautyService } from "@/src/services/beauty-service";
 
-export default function RepresentativeDetailsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function RepresentativeDetailsPage() {
+  const representatives = await beautyService.getRepresentatives();
+
   return (
     <main className="min-h-screen bg-slate-50 px-6 py-12 text-slate-900 lg:px-10">
       <div className="container mx-auto">
-        <RepresentativeManager initialReps={salesReps} view="details" />
+        <RepresentativeManager initialReps={representatives} view="details" />
       </div>
     </main>
   );

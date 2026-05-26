@@ -1,3 +1,7 @@
-import { EmptyPage } from "@/components/empty-page";
+import { CommissionSalaryPageContent } from "@/components/analytics-pages";
 
-export default EmptyPage;
+export const dynamic = "force-dynamic";
+
+export default async function CommissionSalaryPage() {
+  return <CommissionSalaryPageContent />;
+}

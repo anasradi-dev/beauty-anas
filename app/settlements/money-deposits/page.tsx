@@ -1,3 +1,7 @@
-import { EmptyPage } from "@/components/empty-page";
+import { MoneyDepositsPageContent } from "@/components/settlement-pages";
 
-export default EmptyPage;
+export const dynamic = "force-dynamic";
+
+export default async function MoneyDepositsPage() {
+  return <MoneyDepositsPageContent />;
+}

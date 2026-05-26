@@ -1,23 +1,22 @@
+import { requireAdmin } from "@/lib/auth-session";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import { beautyService } from "@/src/services/beauty-service";
 import {
-  createProductCollection,
-  getProductCollections,
-  productCollectionInputSchema,
-} from "@/lib/beauty-repository";
+  productCollectionSchema,
+  type IProductCollectionInput,
+} from "@/src/validators/beauty-validators";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const collections = await getProductCollections();
+    const collections = await beautyService.getProductCollections();
     return Response.json({ collections });
   } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to load product collections.",
+        message: getApiErrorMessage(error, "Could not load product collections"),
       },
       { status: 500 },
     );
@@ -26,18 +25,22 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const input = productCollectionInputSchema.parse(body);
-    const collection = await createProductCollection(input);
+    const adminError = requireAdmin(request);
+    if (adminError) return adminError;
 
-    return Response.json({ collection }, { status: 201 });
+    const body: IProductCollectionInput = productCollectionSchema.parse(
+      await request.json(),
+    );
+    const collection = await beautyService.createProductCollection(body);
+
+    return Response.json(
+      { collection, message: "Product collection created successfully" },
+      { status: 201 },
+    );
   } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to create product collection.",
+        message: getApiErrorMessage(error, "Could not create product collection"),
       },
       { status: 400 },
     );

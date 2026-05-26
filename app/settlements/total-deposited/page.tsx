@@ -1,3 +1,7 @@
-import { EmptyPage } from "@/components/empty-page";
+import { TotalDepositedPageContent } from "@/components/settlement-pages";
 
-export default EmptyPage;
+export const dynamic = "force-dynamic";
+
+export default async function TotalDepositedPage() {
+  return <TotalDepositedPageContent />;
+}

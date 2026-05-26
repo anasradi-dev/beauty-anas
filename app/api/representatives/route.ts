@@ -1,23 +1,22 @@
+import { requireAdmin } from "@/lib/auth-session";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import { beautyService } from "@/src/services/beauty-service";
 import {
-  createRepresentative,
-  getRepresentatives,
-  representativeInputSchema,
-} from "@/lib/beauty-repository";
+  representativeSchema,
+  type IRepresentativeInput,
+} from "@/src/validators/beauty-validators";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const representatives = await getRepresentatives();
+    const representatives = await beautyService.getRepresentatives();
     return Response.json({ representatives });
   } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to load representatives.",
+        message: getApiErrorMessage(error, "Could not load representatives"),
       },
       { status: 500 },
     );
@@ -26,18 +25,22 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const input = representativeInputSchema.parse(body);
-    const representative = await createRepresentative(input);
+    const adminError = requireAdmin(request);
+    if (adminError) return adminError;
 
-    return Response.json({ representative }, { status: 201 });
+    const body: IRepresentativeInput = representativeSchema.parse(
+      await request.json(),
+    );
+    const representative = await beautyService.createRepresentative(body);
+
+    return Response.json(
+      { representative, message: "Representative created successfully" },
+      { status: 201 },
+    );
   } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to create representative.",
+        message: getApiErrorMessage(error, "Could not create representative"),
       },
       { status: 400 },
     );

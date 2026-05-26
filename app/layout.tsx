@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Footer } from "@/components/footer";
-import { Header } from "@/components/header";
 import "./globals.css";
+import { AuthProvider } from "@/components/auth";
+import { AdminAccessGate } from "@/components/admin-access-gate";
 
 export const metadata: Metadata = {
   title: "BEAUTY Commission Sales",
@@ -16,9 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Header />
-        <div className="min-h-screen">{children}</div>
-        <Footer />
+        <AuthProvider>
+          <AdminAccessGate>{children}</AdminAccessGate>
+        </AuthProvider>
       </body>
     </html>
   );

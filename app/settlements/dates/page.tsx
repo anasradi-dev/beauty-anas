@@ -1,3 +1,7 @@
-import { EmptyPage } from "@/components/empty-page";
+import { SettlementDatesPageContent } from "@/components/settlement-pages";
 
-export default EmptyPage;
+export const dynamic = "force-dynamic";
+
+export default async function SettlementDatesPage() {
+  return <SettlementDatesPageContent />;
+}

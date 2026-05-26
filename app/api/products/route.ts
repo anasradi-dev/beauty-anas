@@ -1,21 +1,19 @@
-import {
-  createProduct,
-  getProducts,
-  productInputSchema,
-} from "@/lib/beauty-repository";
+import { requireAdmin } from "@/lib/auth-session";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import { beautyService } from "@/src/services/beauty-service";
+import { productSchema, type IProductInput } from "@/src/validators/beauty-validators";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const products = await getProducts();
+    const products = await beautyService.getProducts();
     return Response.json({ products });
   } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error ? error.message : "Unable to load products.",
+        message: getApiErrorMessage(error, "Could not load products"),
       },
       { status: 500 },
     );
@@ -24,16 +22,20 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const input = productInputSchema.parse(body);
-    const product = await createProduct(input);
+    const adminError = requireAdmin(request);
+    if (adminError) return adminError;
 
-    return Response.json({ product }, { status: 201 });
+    const body: IProductInput = productSchema.parse(await request.json());
+    const product = await beautyService.createProduct(body);
+
+    return Response.json(
+      { product, message: "Product created successfully" },
+      { status: 201 },
+    );
   } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error ? error.message : "Unable to create product.",
+        message: getApiErrorMessage(error, "Could not create product"),
       },
       { status: 400 },
     );

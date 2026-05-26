@@ -1,18 +1,23 @@
-import { seedBeautyData } from "@/lib/beauty-repository";
+import { requireAdmin } from "@/lib/auth-session";
+import { getApiErrorMessage } from "@/lib/api-errors";
+import { beautyService } from "@/src/services/beauty-service";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const representatives = await seedBeautyData();
-    return Response.json({ representatives });
+    const adminError = requireAdmin(request);
+    if (adminError) return adminError;
+
+    const representatives = await beautyService.seedBeautyData();
+    return Response.json({
+      representatives,
+      message: "BEAUTY data seeded successfully",
+    });
   } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to seed BEAUTY data.",
+        message: getApiErrorMessage(error, "Could not seed BEAUTY data"),
       },
       { status: 500 },
     );

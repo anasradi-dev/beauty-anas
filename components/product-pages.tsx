@@ -1,28 +1,24 @@
 import { ProductManager } from "@/components/product-manager";
-import {
-  getProductCollections,
-  getProducts,
-  getRepresentatives,
-} from "@/lib/beauty-repository";
+import { beautyService } from "@/src/services/beauty-service";
 
 async function productManagerData() {
   const [products, collections, representatives] = await Promise.all([
-    getProducts(),
-    getProductCollections(),
-    getRepresentatives(),
+    beautyService.getProducts(),
+    beautyService.getProductCollections(),
+    beautyService.getRepresentatives(),
   ]);
 
   return { products, collections, representatives };
 }
 
 export async function ProductListPageContent() {
-  const { products, collections, representatives } = await productManagerData();
+  const products = await beautyService.getProducts();
 
   return (
     <ProductManager
       initialProducts={products}
-      initialCollections={collections}
-      representatives={representatives}
+      initialCollections={[]}
+      representatives={[]}
       view="list"
     />
   );

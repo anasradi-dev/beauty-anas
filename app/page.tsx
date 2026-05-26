@@ -1,15 +1,5 @@
 import Image from "next/image";
-import {
-  commissionRate,
-  products,
-  salesReps,
-  totalDepositedAmount,
-} from "@/lib/data";
-
-const currency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-});
+import { products } from "@/lib/data";
 
 const heroImages = [
   {
@@ -33,8 +23,6 @@ const heroImages = [
     title: "Services",
   },
 ];
-
-const totalCommission = totalDepositedAmount * commissionRate;
 
 function StatCard({
   label,
@@ -64,32 +52,33 @@ export default function Home() {
               BEAUTY
             </p>
             <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Cosmetic commission sales management
+              BEAUTY cosmetic product collection
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600">
-              Track representatives, product batches, deposited money, and
-              commission salary from one practical workspace.
+              Explore professional beauty products and cosmetic essentials.
+              Admin sales records, deposits, reports, and commissions stay
+              private.
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               <StatCard
-                label="Representatives"
-                value={String(salesReps.length)}
-                detail="Active sellers with settlement records"
-              />
-              <StatCard
                 label="Products"
                 value={String(products.length)}
-                detail="Cosmetic items available for batches"
+                detail="Cosmetic items available in the catalog"
               />
               <StatCard
-                label="Deposited"
-                value={currency.format(totalDepositedAmount)}
-                detail="Money returned after product sales"
+                label="Skincare"
+                value="Care"
+                detail="Products selected for everyday beauty routines"
               />
               <StatCard
-                label="Commission"
-                value={currency.format(totalCommission)}
-                detail={`${commissionRate * 100}% salary from sales volume`}
+                label="Service"
+                value="Support"
+                detail="A focused workspace for the BEAUTY team"
+              />
+              <StatCard
+                label="Access"
+                value="Admin"
+                detail="Private sales management is restricted"
               />
             </div>
           </div>
